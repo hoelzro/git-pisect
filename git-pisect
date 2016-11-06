@@ -1,0 +1,153 @@
+#!/usr/bin/env perl
+
+use autodie;
+use strict;
+use warnings;
+use feature qw(say);
+use experimental qw(signatures);
+
+use File::Path qw(rmtree);
+use File::Spec;
+use File::Temp;
+use List::MoreUtils qw(pairwise);
+use Sys::Info::Device::CPU;
+
+my $NUM_JOBS = Sys::Info::Device::CPU->new->count;
+
+sub usage() {
+    print <<"END_USAGE";
+usage: $0 [test command]
+
+git-bisect, but parallel.
+END_USAGE
+}
+
+sub assert_bisecting {
+    system "git bisect log >/dev/null 2>/dev/null";
+    unless($? == 0) {
+        die "We are not bisecting\n";
+    }
+}
+
+sub create_worktrees($num_trees) {
+    return map {
+        my $dir = File::Temp->newdir;
+        # XXX suppress output
+        system 'git', 'worktree', 'add', $dir, 'HEAD';
+        $dir
+    } 1..$num_trees;
+}
+
+sub cleanup_worktrees(@trees) {
+    for my $tree (@trees) {
+        rmtree($tree->dirname);
+    }
+    system 'git', 'worktree', 'prune';
+}
+
+sub get_bisect_range() {
+    open my $pipe, '-|', 'git', 'for-each-ref', '--format=%(refname)';
+    my @good_refs;
+    while(<$pipe>) {
+        chomp;
+        next unless m{refs/bisect/good};
+        push @good_refs, $_;
+    }
+    close $pipe;
+
+    open $pipe, '-|', 'git', 'rev-list', 'refs/bisect/bad', '--not', @good_refs;
+    my @remaining_commits;
+    while(<$pipe>) {
+        chomp;
+        push @remaining_commits, $_;
+    }
+    close $pipe;
+    return @remaining_commits;
+}
+
+sub get_bisect_info {
+    open my $pipe, '-|', 'git', 'rev-list', '--bisect', '--bisect-vars';
+
+    my %info;
+
+    while(<$pipe>) {
+        chomp;
+        my ( $key, $value ) = split /=/, $_;
+        $info{$key} = $value;
+    }
+    close $pipe;
+    $info{'bisect_rev'} =~ s/^'|'$//g;
+
+    return %info;
+}
+
+sub get_test_points($revisions, $num_parts) {
+    my $num_revisions = @$revisions;
+    my $part_size = $num_revisions / ($num_parts + 1);
+    my @indices = map { int(($part_size * $_) - 1) } 1..$num_parts;
+    return @{$revisions}[@indices];
+}
+
+sub start_test_at_revision($command, $tree, $revision) {
+    my $pid = fork();
+
+    if($pid) {
+        return $pid;
+    } else {
+        chdir $tree->dirname;
+        open STDIN,  '<', File::Spec->devnull;
+        open STDOUT, '>', File::Spec->devnull;
+        open STDERR, '>', File::Spec->devnull;
+        system 'git', 'checkout', $revision;
+
+        exec @$command;
+    }
+}
+
+# XXX this seems to return 1 if the command isn't found?
+sub get_test_results($handle) {
+    waitpid $handle, 0;
+    return $? == 0;
+}
+
+usage() unless @ARGV;
+my @test_command = @ARGV;
+
+assert_bisecting();
+my @trees = create_worktrees($NUM_JOBS);
+
+my %bisect_info = get_bisect_info();
+
+while($bisect_info{'bisect_steps'} > 0) {
+    my @revisions   = get_bisect_range();
+    # XXX what if there are fewer revisions than trees?
+    my @test_points = get_test_points(\@revisions, scalar(@trees));
+    my @handles     = pairwise { start_test_at_revision(\@test_command, $a, $b) } @trees, @test_points;
+    my @results     = map { get_test_results($_) } @handles;
+
+    for my $i (0..$#results) {
+        my $result   = $results[$i];
+        my $revision = $test_points[$i];
+
+        if($result) {
+            system 'git', 'bisect', 'good', $revision;
+        } else {
+            system 'git', 'bisect', 'bad', $revision;
+        }
+    }
+    %bisect_info = get_bisect_info();
+}
+
+say "$bisect_info{'bisect_rev'} is the first bad commit";
+system 'git', 'show', $bisect_info{'bisect_rev'};
+
+cleanup_worktrees(@trees);
+
+# Caveats:
+#  XXX I have no idea how it'll handle a flapping test (eg. multiple good/bad boundaries)
+#        it should converge on a boundary of some kind, though
+#  XXX It won't work if you need input from STDIN
+#  XXX The output is discarded - it could better be logged
+#  XXX skipping isn't implemented
+#  XXX the test must exist in the repo
+#  XXX # jobs is fixed to CPU count
