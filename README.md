@@ -1,6 +1,16 @@
 # git-pisect - Parallel regression finder
 
+# Install
+
+    wget https://raw.githubusercontent.com/hoelzro/git-pisect/master/git-pisect
+    cpan install Sys::Info List:MoreUtils
+    
 # Usage
+
+    $ git bisect start
+    $ git bisect bad 1234abc
+    $ git bisect good xyz0987
+    $ git pisect command [args]
 
 # What's with the name?
 
