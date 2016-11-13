@@ -10,9 +10,24 @@ use File::Path qw(rmtree);
 use File::Spec;
 use File::Temp;
 use List::MoreUtils qw(pairwise);
-use Sys::Info::Device::CPU;
 
-my $NUM_JOBS = Sys::Info::Device::CPU->new->count;
+my $NUM_JOBS;
+
+eval {
+    require Sys::Info::Device::CPU;
+    $NUM_JOBS = Sys::Info::Device::CPU->new->count;
+};
+if($@) {
+    my $fh;
+    my $status = CORE::open $fh, '<', '/proc/cpuinfo';
+    if($status) {
+        $NUM_JOBS = grep { /^processor\s*:\s*\d+/ } <$fh>;
+        close $fh;
+    } else {
+        $NUM_JOBS = 2;
+        warn "Can't determine number of jobs - falling back to 2. Please install Sys::Info::Device::CPU to enable CPU detection";
+    }
+}
 
 sub usage() {
     print <<"END_USAGE";
