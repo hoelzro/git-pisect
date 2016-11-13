@@ -13,19 +13,23 @@ use List::MoreUtils qw(pairwise);
 
 my $NUM_JOBS;
 
-eval {
-    require Sys::Info::Device::CPU;
-    $NUM_JOBS = Sys::Info::Device::CPU->new->count;
-};
-if($@) {
-    my $fh;
-    my $status = CORE::open $fh, '<', '/proc/cpuinfo';
-    if($status) {
-        $NUM_JOBS = grep { /^processor\s*:\s*\d+/ } <$fh>;
-        close $fh;
-    } else {
-        $NUM_JOBS = 2;
-        warn "Can't determine number of jobs - falling back to 2. Please install Sys::Info::Device::CPU to enable CPU detection";
+if(my $jobs = $ENV{'PISECT_JOBS'}) {
+    $NUM_JOBS = $jobs;
+} else {
+    eval {
+        require Sys::Info::Device::CPU;
+        $NUM_JOBS = Sys::Info::Device::CPU->new->count;
+    };
+    if($@) {
+        my $fh;
+        my $status = CORE::open $fh, '<', '/proc/cpuinfo';
+        if($status) {
+            $NUM_JOBS = grep { /^processor\s*:\s*\d+/ } <$fh>;
+            close $fh;
+        } else {
+            $NUM_JOBS = 2;
+            warn "Can't determine number of jobs - falling back to 2. Please install Sys::Info::Device::CPU to enable CPU detection, or provide PISECT_JOBS=N in your environment";
+        }
     }
 }
 
