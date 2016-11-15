@@ -41,6 +41,28 @@ git-bisect, but parallel.
 END_USAGE
 }
 
+sub silent_system(@args) {
+    my @silence_me;
+
+    if(ref($args[0]) eq 'ARRAY') {
+        @silence_me = @{ $args[0] };
+        shift @args;
+    } else {
+        @silence_me = \*STDOUT;
+    }
+    my $pid = fork();
+
+    if($pid) {
+        waitpid $pid, 0;
+    } else {
+        for my $fh (@silence_me) {
+            open *$fh, '>', File::Spec->devnull;
+        }
+        exec @args;
+        exit(127);
+    }
+}
+
 sub assert_bisecting {
     system "git bisect log >/dev/null 2>/dev/null";
     unless($? == 0) {
@@ -51,8 +73,7 @@ sub assert_bisecting {
 sub create_worktrees($num_trees) {
     return map {
         my $dir = File::Temp->newdir;
-        # XXX suppress output
-        system 'git', 'worktree', 'add', $dir, 'HEAD';
+        silent_system [ \*STDOUT, \*STDERR ], 'git', 'worktree', 'add', $dir, 'HEAD';
         $dir
     } 1..$num_trees;
 }
@@ -149,9 +170,9 @@ while($bisect_info{'bisect_all'} > 1) {
         my $revision = $test_points[$i];
 
         if($result) {
-            system 'git', 'bisect', 'good', $revision;
+            silent_system 'git', 'bisect', 'good', $revision;
         } else {
-            system 'git', 'bisect', 'bad', $revision;
+            silent_system 'git', 'bisect', 'bad', $revision;
         }
     }
     %bisect_info = get_bisect_info();
