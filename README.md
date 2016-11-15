@@ -26,6 +26,11 @@ when run on repositories that have a test suite with the following qualities:
 at once - you can specify the number of jobs to run with the `PISECT_JOBS` environment
 variable.
 
+# Explanation
+
+I wrote up a [blog post](https://hoelz.ro/blog/git-pisect) about why I wrote this tool, as well as
+how it works.
+
 # Dependencies
 
 Requires the [List::MoreUtils](https://metacpan.org/pod/List::MoreUtils) Perl module, and optionally the [Sys::Info](https://metacpan.org/pod/Sys::Info)
