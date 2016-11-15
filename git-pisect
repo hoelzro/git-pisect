@@ -150,6 +150,15 @@ sub get_test_results($handle) {
     return $? == 0;
 }
 
+sub report_progress(%bisect_vars) {
+    # XXX better estimation
+    my ( $bisect_nr, $bisect_steps ) = @bisect_vars{qw/bisect_nr bisect_steps/};
+    my $rev_plural   = $bisect_nr    == 1 ? '' : 's';
+    my $steps_plural = $bisect_steps == 1 ? '' : 's';
+
+    say "Bisecting: $bisect_nr revision$rev_plural left to test after this (roughly $bisect_steps step$steps_plural)";
+}
+
 usage() unless @ARGV;
 my @test_command = @ARGV;
 
@@ -159,6 +168,8 @@ my @trees = create_worktrees($NUM_JOBS);
 my %bisect_info = get_bisect_info();
 
 while($bisect_info{'bisect_all'} > 1) {
+    report_progress(%bisect_info);
+
     my @revisions   = get_bisect_range();
     # XXX what if there are fewer revisions than trees?
     my @test_points = get_test_points(\@revisions, scalar(@trees));
