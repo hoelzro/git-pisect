@@ -105,7 +105,8 @@ TODO
 
 # Dependencies
 
-TODO
+Requires the [List::MoreUtils](https://metacpan.org/pod/List::MoreUtils) Perl module, and optionally the [Sys::Info](https://metacpan.org/pod/Sys::Info)
+module if you want to automatically detect the number of jobs to run on non-Linux systems.
 
 # Caveats
 
