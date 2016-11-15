@@ -110,4 +110,11 @@ module if you want to automatically detect the number of jobs to run on non-Linu
 
 # Caveats
 
-TODO
+This is kind of proof-of-concept and is experimental, so the following are things to keep in mind while playing with `git-pisect`:
+
+  * I have no idea how it'll handle a flapping test (eg. multiple good/bad boundaries); it should converge on a boundary of some kind, though.
+  * It won't work if the test suite needs input from STDIN.
+  * It won't work if the test suite isn't safe to run in a parallel environment.
+  * The output of tests is discarded - it would be preferable to log it somewhere.
+  * Skipping commits isn't implemented.
+  * The "number of steps" metric isn't accurate, since it currently uses the existing `git-bisect` machinery to print the progress report.

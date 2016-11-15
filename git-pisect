@@ -193,12 +193,3 @@ say "$bisect_info{'bisect_rev'} is the first bad commit";
 system 'git', 'show', $bisect_info{'bisect_rev'};
 
 cleanup_worktrees(@trees);
-
-# Caveats:
-#  XXX I have no idea how it'll handle a flapping test (eg. multiple good/bad boundaries)
-#        it should converge on a boundary of some kind, though
-#  XXX It won't work if you need input from STDIN
-#  XXX The output is discarded - it could better be logged
-#  XXX skipping isn't implemented
-#  XXX the test must exist in the repo
-#  XXX # jobs is fixed to CPU count
