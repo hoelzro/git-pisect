@@ -74,7 +74,7 @@ sub get_bisect_range() {
     }
     close $pipe;
 
-    open $pipe, '-|', 'git', 'rev-list', 'refs/bisect/bad', '--not', @good_refs;
+    open $pipe, '-|', 'git', 'rev-list', 'refs/bisect/bad^', '--not', @good_refs;
     my @remaining_commits;
     while(<$pipe>) {
         chomp;
@@ -137,7 +137,7 @@ my @trees = create_worktrees($NUM_JOBS);
 
 my %bisect_info = get_bisect_info();
 
-while($bisect_info{'bisect_steps'} > 0) {
+while($bisect_info{'bisect_all'} > 1) {
     my @revisions   = get_bisect_range();
     # XXX what if there are fewer revisions than trees?
     my @test_points = get_test_points(\@revisions, scalar(@trees));
