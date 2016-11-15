@@ -1,11 +1,20 @@
 # git-pisect - Parallel regression finder
 
+`git-pisect` is an alternative to `git bisect run` that uses multiple concurrent tests to try
+to finish a bisect more quickly.  It's experimental, but should work fine.  Provides best results
+when run on repositories that have a test suite with the following qualities:
+
+  * Requires no input from a user
+  * Takes a long (for some definition of long, usually greater than a few seconds) to run
+  * Is safely parallelizable (ie. tests won't step on each others' feet regarding things like file or database access)
+  * Doesn't implement any parallelization itself (otherwise the parallelization that pisect provides is redundant)
+
 # Install
 
     $ wget https://raw.githubusercontent.com/hoelzro/git-pisect/master/git-pisect
     $ cpanm List:MoreUtils
     $ cpanm Sys::Info # optional, used for CPU detection
-    
+
 # Usage
 
     $ git bisect start
