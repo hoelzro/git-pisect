@@ -12,7 +12,7 @@ when run on repositories that have a test suite with the following qualities:
 # Install
 
     $ wget https://raw.githubusercontent.com/hoelzro/git-pisect/master/git-pisect
-    $ cpanm List:MoreUtils
+    $ cpanm List::MoreUtils
     $ cpanm Sys::Info # optional, used for CPU detection
 
 # Usage
