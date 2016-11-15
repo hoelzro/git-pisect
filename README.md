@@ -2,8 +2,9 @@
 
 # Install
 
-    wget https://raw.githubusercontent.com/hoelzro/git-pisect/master/git-pisect
-    cpan install Sys::Info List:MoreUtils
+    $ wget https://raw.githubusercontent.com/hoelzro/git-pisect/master/git-pisect
+    $ cpanm List:MoreUtils
+    $ cpanm Sys::Info # optional, used for CPU detection
     
 # Usage
 
@@ -11,6 +12,10 @@
     $ git bisect bad 1234abc
     $ git bisect good xyz0987
     $ git pisect command [args]
+
+`git-pisect` attempts to detect the number of CPUs you have and runs that many tests
+at once - you can specify the number of jobs to run with the `PISECT_JOBS` environment
+variable.
 
 # What's with the name?
 
