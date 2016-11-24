@@ -124,7 +124,7 @@ sub get_bisect_info {
 sub get_test_points($revisions, $num_parts) {
     my $num_revisions = @$revisions;
     my $part_size = $num_revisions / ($num_parts + 1);
-    my @indices = map { int(($part_size * $_) - 1) } 1..$num_parts;
+    my @indices = map { int(($part_size * $_)) } 1..$num_parts;
     return @{$revisions}[@indices];
 }
 
