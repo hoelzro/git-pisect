@@ -176,15 +176,26 @@ while($bisect_info{'bisect_all'} > 1) {
     my @handles     = pairwise { start_test_at_revision(\@test_command, $a, $b) } @trees, @test_points;
     my @results     = map { get_test_results($_) } @handles;
 
+    my $good_commit;
+    my $bad_commit;
+
     for my $i (0..$#results) {
         my $result   = $results[$i];
         my $revision = $test_points[$i];
 
         if($result) {
-            silent_system 'git', 'bisect', 'good', $revision;
+            if(!$good_commit) {
+                $good_commit = $revision;
+            }
         } else {
-            silent_system 'git', 'bisect', 'bad', $revision;
+            $bad_commit = $revision;
         }
+    }
+    if($good_commit) {
+        silent_system 'git', 'bisect', 'good', $good_commit;
+    }
+    if($bad_commit) {
+        silent_system 'git', 'bisect', 'bad', $bad_commit;
     }
     %bisect_info = get_bisect_info();
 }
