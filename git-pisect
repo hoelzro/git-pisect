@@ -95,7 +95,7 @@ sub get_bisect_range() {
     }
     close $pipe;
 
-    open $pipe, '-|', 'git', 'rev-list', 'refs/bisect/bad^', '--not', @good_refs;
+    open $pipe, '-|', 'git', 'rev-list', 'refs/bisect/bad', '--not', @good_refs;
     my @remaining_commits;
     while(<$pipe>) {
         chomp;
